@@ -72,7 +72,7 @@ public class InitializrProperties extends InitializrConfiguration {
 	 * GroupId metadata.
 	 */
 	@JsonIgnore
-	private final SimpleElement groupId = new SimpleElement("com.example");
+	private final SimpleElement groupId = new SimpleElement("com.jiatui.example");
 
 	/**
 	 * ArtifactId metadata.
@@ -84,7 +84,7 @@ public class InitializrProperties extends InitializrConfiguration {
 	 * Version metadata.
 	 */
 	@JsonIgnore
-	private final SimpleElement version = new SimpleElement("0.0.1-SNAPSHOT");
+	private final SimpleElement version = new SimpleElement("1.0.0-SNAPSHOT");
 
 	/**
 	 * Name metadata.
@@ -97,7 +97,7 @@ public class InitializrProperties extends InitializrConfiguration {
 	 */
 	@JsonIgnore
 	private final SimpleElement description = new SimpleElement(
-			"Demo project for Spring Boot");
+			"微服务示例工程");
 
 	/**
 	 * Package name metadata.

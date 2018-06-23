@@ -80,7 +80,8 @@ public abstract class AbstractInitializrController {
 
 		model.put("serviceUrl", generateAppUrl());
 		BeanWrapperImpl wrapper = new BeanWrapperImpl(metadata);
-		for (PropertyDescriptor descriptor : wrapper.getPropertyDescriptors()) {
+		PropertyDescriptor[] propertyDescriptors = wrapper.getPropertyDescriptors();
+		for (PropertyDescriptor descriptor : propertyDescriptors) {
 			if ("types".equals(descriptor.getName())) {
 				model.put("types", removeTypes(metadata.getTypes()));
 			}

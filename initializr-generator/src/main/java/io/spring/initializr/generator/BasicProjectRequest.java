@@ -56,6 +56,8 @@ public class BasicProjectRequest {
 
 	private String javaVersion;
 
+	private String archetype;
+
 	// The base directory to create in the archive - no baseDir by default
 	private String baseDir;
 
@@ -185,4 +187,11 @@ public class BasicProjectRequest {
 		this.baseDir = baseDir;
 	}
 
+	public String getArchetype() {
+		return archetype;
+	}
+
+	public void setArchetype(String archetype) {
+		this.archetype = archetype;
+	}
 }

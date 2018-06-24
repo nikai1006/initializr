@@ -8,7 +8,7 @@ package io.spring.initializr.metadata;
  * @Date: Create in 22:05 2018/6/24
  * @Modified By:
  */
-public class Archetype extends DefaultMetadataElement implements Describable{
+public class Archetype extends DefaultMetadataElement implements Describable {
 
     private String description;
     /**
@@ -23,6 +23,11 @@ public class Archetype extends DefaultMetadataElement implements Describable{
      *
      */
     private String version;
+
+    /**
+     *
+     */
+    private String style;
 
 
     public String getGroupId() {
@@ -58,6 +63,14 @@ public class Archetype extends DefaultMetadataElement implements Describable{
         return description;
     }
 
+    public String getStyle() {
+        return style;
+    }
+
+    public void setStyle(String style) {
+        this.style = style;
+    }
+
     @Override
     public String toString() {
         return "Archetype{" +
@@ -65,6 +78,7 @@ public class Archetype extends DefaultMetadataElement implements Describable{
                 ", groupId='" + groupId + '\'' +
                 ", artifactId='" + artifactId + '\'' +
                 ", version='" + version + '\'' +
+                ", style='" + style + '\'' +
                 '}';
     }
 }

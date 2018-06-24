@@ -43,7 +43,13 @@ new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
                             <option value="{{id}}" {{#default}} selected{{/default}}>{{name}}</option>
                             {{/bootVersions.content}}
                         </select>
-                        <label for="type">创建一个</label>
+                        <label for="archetype">以及</label>
+                        <select tabindex="3" class="form-control" name="archetype" id="archetype">
+                                                    {{#archetypes.content}}
+                                                    <option value="{{id}}" {{#default}} selected{{/default}}>{{name}}</option>
+                                                    {{/archetypes.content}}
+                        </select>
+                        <label for="type">来创建一个</label>
                         <select tabindex="1" class="form-control" id="type" name="type">
                           {{#types.content}}
                             <option data-action="{{action}}" value="{{id}}" {{#default}}

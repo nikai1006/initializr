@@ -17,11 +17,8 @@
 package io.spring.initializr.generator;
 
 import io.spring.initializr.InitializrException;
-import io.spring.initializr.metadata.BillOfMaterials;
-import io.spring.initializr.metadata.Dependency;
+import io.spring.initializr.metadata.*;
 import io.spring.initializr.metadata.InitializrConfiguration.Env.Maven.ParentPom;
-import io.spring.initializr.metadata.InitializrMetadata;
-import io.spring.initializr.metadata.InitializrMetadataProvider;
 import io.spring.initializr.util.TemplateRenderer;
 import io.spring.initializr.util.Version;
 import io.spring.initializr.util.VersionProperty;
@@ -288,9 +285,31 @@ public class ProjectGenerator {
 														  Map<String, Object> model) {
 		log.info("开始使用maven模板工程生成项目文件.................................");
 		try {
+			String pom = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+					"<project xmlns=\"http://maven.apache.org/POM/4.0.0\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd\">\n" +
+					"  <modelVersion>4.0.0</modelVersion>\n" +
+					"  <groupId>org.apache.maven.archetype</groupId>\n" +
+					"  <version>1.0</version>\n" +
+					"  <artifactId>archetype-tmp</artifactId>\n" +
+					"  <packaging>pom</packaging>  \n" +
+					"</project>";
+			File pomFile = new File(dir, "pom.xml");
+			writeText(pomFile, pom);
+			String maven_home = System.getProperty("MAVEN_HOME");
+			if (null == maven_home)
+			{
+				log.warn("maven home is null..............");
+			}
+			else {
+				log.info("maven home is : {}",maven_home);
+			}
 			File mavenHome = new File("C:\\Users\\keni\\.m2\\wrapper\\dists\\apache-maven-3.5.3-bin\\2c22a6s60afpuloj4v181qvild\\apache-maven-3.5.3");
-			BootstrapMainStarter bootstrapMainStarter = new BootstrapMainStarter();
 
+			Archetype arctype = request.getArctype();
+			if (arctype == null)
+			{
+				return;
+			}
 			String baseDir = dir.getAbsolutePath();
 			System.setProperty("maven.multiModuleProjectDirectory", baseDir);
 			String archetypeGroupId = "cn.net.nikai.archetype";
@@ -300,8 +319,19 @@ public class ProjectGenerator {
 			String artifactId = request.getArtifactId();
 			String version = request.getVersion();
 			String packageName = request.getPackageName();
-			String[] generates = {"archetype:generate", "-B", "-f", baseDir + "pom.xml", "-DarchetypeGroupId=" + archetypeGroupId, "-DarchetypeArtifactId=" + archetypeArtifactId, "-DarchetypeVersion=" + archetypeVersion, "-DgroupId=" + groupId, "-DartifactId=" + artifactId, "-Dversion=" + version, "-Dpackage=" + packageName, "-Dbasedir=" + baseDir, "-U", "-e"};
-//			bootstrapMainStarter.start(generates, mavenHome);
+			String[] generates = {"archetype:generate", "-B", "-f", pomFile.getAbsolutePath(), "-DarchetypeGroupId=" + archetypeGroupId, "-DarchetypeArtifactId=" + archetypeArtifactId, "-DarchetypeVersion=" + archetypeVersion, "-DgroupId=" + groupId, "-DartifactId=" + artifactId, "-Dversion=" + version, "-Dpackage=" + packageName, "-Dbasedir=" + baseDir, "-U", "-e"};
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					BootstrapMainStarter bootstrapMainStarter = new BootstrapMainStarter();
+					try {
+						bootstrapMainStarter.start(generates, mavenHome);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			}).start();
+			Thread.sleep(5000);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

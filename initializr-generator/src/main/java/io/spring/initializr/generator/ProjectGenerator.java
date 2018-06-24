@@ -312,9 +312,9 @@ public class ProjectGenerator {
 			}
 			String baseDir = dir.getAbsolutePath();
 			System.setProperty("maven.multiModuleProjectDirectory", baseDir);
-			String archetypeGroupId = "cn.net.nikai.archetype";
-			String archetypeArtifactId = "spring-boot-archetype";
-			String archetypeVersion = "1.0.0-SNAPSHOT";
+			String archetypeGroupId = arctype.getGroupId();
+			String archetypeArtifactId = arctype.getArtifactId();
+			String archetypeVersion = arctype.getVersion();
 			String groupId = request.getGroupId();
 			String artifactId = request.getArtifactId();
 			String version = request.getVersion();

@@ -264,7 +264,7 @@ public class MainController extends AbstractInitializrController {
 
 		File download = this.projectGenerator.createDistributionFile(dir, ".zip");
 
-		log.info("download="+download.getAbsolutePath());
+		log.info("download="+download.getAbsolutePath());//FIXME
 		String wrapperScript = getWrapperScript(request);
 		new File(dir, wrapperScript).setExecutable(true);
 		Zip zip = new Zip();

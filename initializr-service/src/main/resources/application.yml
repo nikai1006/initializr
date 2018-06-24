@@ -1374,3 +1374,18 @@ initializr:
     - name: 1.1.12
       id: 1.1.12.RELEASE
       default: false
+  archetypes:
+    - name: Mybatis ORM
+      id: mybatis-orm
+      default: true
+      description: a springboot archetype with mybatis orm
+      groupId: cn.net.nikai.archetype
+      artifactId: spring-boot-archetype
+      version: 1.0.0-SNAPSHOT
+    - name: JPA ORM
+      id: jpa-orm
+      default: true
+      description: a springboot archetype with jpa orm
+      groupId: cn.net.nikai.archetype
+      artifactId: spring-boot-archetype
+      version: 1.0.0-SNAPSHOT

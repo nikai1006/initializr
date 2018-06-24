@@ -45,6 +45,12 @@ public class InitializrProperties extends InitializrConfiguration {
 	private final List<Type> types = new ArrayList<>();
 
 	/**
+	 * Available project archetype
+	 */
+	@JsonIgnore
+	private final List<Archetype> archetypes = new ArrayList<>();
+
+	/**
 	 * Available packaging types.
 	 */
 	@JsonIgnore
@@ -111,6 +117,10 @@ public class InitializrProperties extends InitializrConfiguration {
 
 	public List<Type> getTypes() {
 		return this.types;
+	}
+
+	public List<Archetype> getArchetypes() {
+		return this.archetypes;
 	}
 
 	public List<DefaultMetadataElement> getPackagings() {

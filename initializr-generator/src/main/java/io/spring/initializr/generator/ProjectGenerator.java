@@ -16,21 +16,6 @@
 
 package io.spring.initializr.generator;
 
-import java.beans.PropertyDescriptor;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 import io.spring.initializr.InitializrException;
 import io.spring.initializr.metadata.BillOfMaterials;
 import io.spring.initializr.metadata.Dependency;
@@ -40,9 +25,9 @@ import io.spring.initializr.metadata.InitializrMetadataProvider;
 import io.spring.initializr.util.TemplateRenderer;
 import io.spring.initializr.util.Version;
 import io.spring.initializr.util.VersionProperty;
+import org.apache.maven.wrapper.BootstrapMainStarter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -50,6 +35,15 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.util.Assert;
 import org.springframework.util.FileSystemUtils;
 import org.springframework.util.StreamUtils;
+
+import java.beans.PropertyDescriptor;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.Charset;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Generate a project based on the configured metadata.
@@ -193,7 +187,7 @@ public class ProjectGenerator {
 	 */
 	public File generateProjectStructure(ProjectRequest request) {
 		try {
-			Map<String, Object> model = resolveModel(request);
+			Map<String, Object> model = resolveModel(request);//解析入参，在此处添加自定义依赖 TODO
 			File rootDir = generateProjectStructure(request, model);
 			publishProjectGeneratedEvent(request);
 			return rootDir;
@@ -224,7 +218,9 @@ public class ProjectGenerator {
 		rootDir.delete();
 		rootDir.mkdirs();
 
-		File dir = initializerProjectDir(rootDir, request);
+		File dir = initializerProjectDir(rootDir, request);//basedir
+		File tmpDir = new File(rootDir,"tmp");
+		tmpDir.mkdirs();
 
 		if (isGradleBuild(request)) {
 			String gradle = new String(doGenerateGradleBuild(model));
@@ -245,8 +241,9 @@ public class ProjectGenerator {
 		String language = request.getLanguage();
 
 		String codeLocation = language;
+		String packagePath = request.getPackageName().replace(".", "/");
 		File src = new File(new File(dir, "src/main/" + codeLocation),
-				request.getPackageName().replace(".", "/"));
+				packagePath);
 		src.mkdirs();
 		String extension = ("kotlin".equals(language) ? "kt" : language);
 		write(new File(src, applicationName + "." + extension),
@@ -258,7 +255,7 @@ public class ProjectGenerator {
 		}
 
 		File test = new File(new File(dir, "src/test/" + codeLocation),
-				request.getPackageName().replace(".", "/"));
+				packagePath);
 		test.mkdirs();
 		setupTestModel(request, model);
 		write(new File(test, applicationName + "Tests." + extension),
@@ -272,7 +269,43 @@ public class ProjectGenerator {
 			new File(dir, "src/main/resources/templates").mkdirs();
 			new File(dir, "src/main/resources/static").mkdirs();
 		}
+		//TODO 添加自定义工程文件，使用maven archetype功能创建，覆盖掉原有的配置文件和代码，保留构建文件
+		generateProjectStructureByMavenArchetype(packagePath,tmpDir,request,model);
 		return rootDir;
+	}
+
+	/**
+	 * <pre>
+	 *     使用maven工程 模板来创建项目目录
+	 *     把生成的代码和资源文件（src下面所有）拷贝到basedir里面，并进行覆盖，除了Application.java文件
+	 * </pre>
+	 * @param packagePath 包路径
+	 * @param dir 工程根路径
+	 * @param request 请求参数
+	 * @param model 模型参数
+	 */
+	private void generateProjectStructureByMavenArchetype(String packagePath, File dir,ProjectRequest request,
+														  Map<String, Object> model) {
+		log.info("开始使用maven模板工程生成项目文件.................................");
+		try {
+			File mavenHome = new File("C:\\Users\\keni\\.m2\\wrapper\\dists\\apache-maven-3.5.3-bin\\2c22a6s60afpuloj4v181qvild\\apache-maven-3.5.3");
+			BootstrapMainStarter bootstrapMainStarter = new BootstrapMainStarter();
+
+			String baseDir = dir.getAbsolutePath();
+			System.setProperty("maven.multiModuleProjectDirectory", baseDir);
+			String archetypeGroupId = "cn.net.nikai.archetype";
+			String archetypeArtifactId = "spring-boot-archetype";
+			String archetypeVersion = "1.0.0-SNAPSHOT";
+			String groupId = request.getGroupId();
+			String artifactId = request.getArtifactId();
+			String version = request.getVersion();
+			String packageName = request.getPackageName();
+			String[] generates = {"archetype:generate", "-B", "-f", baseDir + "pom.xml", "-DarchetypeGroupId=" + archetypeGroupId, "-DarchetypeArtifactId=" + archetypeArtifactId, "-DarchetypeVersion=" + archetypeVersion, "-DgroupId=" + groupId, "-DartifactId=" + artifactId, "-Dversion=" + version, "-Dpackage=" + packageName, "-Dbasedir=" + baseDir, "-U", "-e"};
+//			bootstrapMainStarter.start(generates, mavenHome);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
 	}
 
 	/**

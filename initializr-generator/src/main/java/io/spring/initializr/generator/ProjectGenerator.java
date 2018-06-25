@@ -30,6 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.util.Assert;
+import org.springframework.util.FileCopyUtils;
 import org.springframework.util.FileSystemUtils;
 import org.springframework.util.StreamUtils;
 
@@ -215,8 +216,8 @@ public class ProjectGenerator {
         rootDir.mkdirs();
 
         File dir = initializerProjectDir(rootDir, request);//basedir
-        File tmpDir = new File(rootDir, "tmp");
-        tmpDir.mkdirs();
+        File archetypeDir = new File(rootDir, "archetype");
+        archetypeDir.mkdirs();
 
         if (isGradleBuild(request)) {
             String gradle = new String(doGenerateGradleBuild(model));
@@ -264,8 +265,8 @@ public class ProjectGenerator {
             new File(dir, "src/main/resources/templates").mkdirs();
             new File(dir, "src/main/resources/static").mkdirs();
         }
-        if (language.equals("java")) {
-            generateProjectStructureByMavenArchetype(packagePath, tmpDir, request, model);
+        if ("java".equals(language)) {
+            generateProjectStructureByMavenArchetype(packagePath,dir, archetypeDir, request, model);
         }
         return rootDir;
     }
@@ -281,7 +282,8 @@ public class ProjectGenerator {
      * @param request 请求参数
      * @param model 模型参数
      */
-    private void generateProjectStructureByMavenArchetype(String packagePath, File dir, ProjectRequest request,
+    private void generateProjectStructureByMavenArchetype(String packagePath, File rootdir, File dir,
+        ProjectRequest request,
         Map<String, Object> model) {
         try {
             String pom = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
@@ -323,10 +325,30 @@ public class ProjectGenerator {
             BootstrapMainStarter bootstrapMainStarter = new BootstrapMainStarter();
             bootstrapMainStarter.start(generates, mavenHome);
 
+            File targetDir = new File(dir, artifactId);
+            cleanUselessFile(targetDir);
+            FileSystemUtils.copyRecursively(targetDir,rootdir);
+            FileSystemUtils.deleteRecursively(dir);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
 
+    }
+
+    /**
+     * clean useless file
+     * @param targetDir
+     */
+    private void cleanUselessFile(File targetDir) {
+        File gitignoreFile = new File(targetDir, ".gitignore");
+        File pomFile = new File(targetDir, "pom.xml");
+        if (gitignoreFile.exists()) {
+            gitignoreFile.delete();
+        }
+        if (pomFile.exists()) {
+            pomFile.delete();
+        }
     }
 
     /**

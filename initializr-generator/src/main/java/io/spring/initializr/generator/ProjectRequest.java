@@ -230,11 +230,12 @@ public class ProjectRequest extends BasicProjectRequest {
      * @return
      */
     private List<String> handleDefaultDependencies(List<String> depIds) {
-        if (null == depIds) {
+        if (null != depIds) {
             depIds = new ArrayList<>(1);
             depIds.add(arctype.getStyle());
         }
         depIds.add("mysql");
+        depIds.add("web");
         depIds.add("cloud-eureka");
         return depIds;
     }

@@ -186,7 +186,7 @@ public class ProjectGenerator {
      */
     public File generateProjectStructure(ProjectRequest request) {
         try {
-            Map<String, Object> model = resolveModel(request);//解析入参，在此处添加自定义依赖 TODO
+            Map<String, Object> model = resolveModel(request);
             File rootDir = generateProjectStructure(request, model);
             publishProjectGeneratedEvent(request);
             return rootDir;
@@ -216,8 +216,6 @@ public class ProjectGenerator {
         rootDir.mkdirs();
 
         File dir = initializerProjectDir(rootDir, request);//basedir
-        File archetypeDir = new File(rootDir, "archetype");
-        archetypeDir.mkdirs();
 
         if (isGradleBuild(request)) {
             String gradle = new String(doGenerateGradleBuild(model));
@@ -242,7 +240,8 @@ public class ProjectGenerator {
             packagePath);
         src.mkdirs();
         String extension = ("kotlin".equals(language) ? "kt" : language);
-        write(new File(src, applicationName + "." + extension),
+        File targetAppFile = new File(src, applicationName + "." + extension);
+        write(targetAppFile,
             "Application." + extension, model);
 
         if ("war".equals(request.getPackaging())) {
@@ -254,7 +253,8 @@ public class ProjectGenerator {
             packagePath);
         test.mkdirs();
         setupTestModel(request, model);
-        write(new File(test, applicationName + "Tests." + extension),
+        File targetAppTestFile = new File(test, applicationName + "Tests." + extension);
+        write(targetAppTestFile,
             "ApplicationTests." + extension, model);
 
         File resources = new File(dir, "src/main/resources");
@@ -266,7 +266,19 @@ public class ProjectGenerator {
             new File(dir, "src/main/resources/static").mkdirs();
         }
         if ("java".equals(language)) {
-            generateProjectStructureByMavenArchetype(packagePath,dir, archetypeDir, request, model);
+            File archetypeDir = new File(rootDir, "archetype");
+            archetypeDir.mkdirs();
+            boolean generateResult = generateProjectStructureByMavenArchetype(packagePath, dir, archetypeDir, request,
+                model);
+            if (generateResult) {
+                if (targetAppFile.exists()) {
+                    targetAppFile.delete();
+                }
+                if (targetAppTestFile.exists()) {
+                    targetAppTestFile.delete();
+                }
+            }
+            FileSystemUtils.deleteRecursively(archetypeDir);
         }
         return rootDir;
     }
@@ -282,9 +294,8 @@ public class ProjectGenerator {
      * @param request 请求参数
      * @param model 模型参数
      */
-    private void generateProjectStructureByMavenArchetype(String packagePath, File rootdir, File dir,
-        ProjectRequest request,
-        Map<String, Object> model) {
+    private boolean generateProjectStructureByMavenArchetype(String packagePath, File rootdir, File dir,
+        ProjectRequest request, Map<String, Object> model) {
         try {
             String pom = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<project xmlns=\"http://maven.apache.org/POM/4.0.0\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd\">\n"
@@ -297,17 +308,15 @@ public class ProjectGenerator {
                 "</project>";
             File pomFile = new File(dir, "pom.xml");
             writeText(pomFile, pom);
-            String maven_home = System.getProperty("MAVEN_HOME");
-            if (null == maven_home) {
-                log.warn("maven home is null..............");
-            } else {
-                log.info("maven home is : {}", maven_home);
-            }
-            File mavenHome = new File("D:\\test\\java\\maven\\initializr\\github\\apache-maven-3.5.3");
+            File mavenHome = new File(getTemporaryDirectory().getParentFile().getParentFile(), ".mvn");
 
+            if (mavenHome == null || !mavenHome.exists()) {
+                log.error("maven home [{}] not exists",mavenHome.getCanonicalPath());
+                return false;
+            }
             Archetype arctype = request.getArctype();
             if (arctype == null) {
-                return;
+                return false;
             }
             String baseDir = dir.getAbsolutePath();
             System.setProperty("maven.multiModuleProjectDirectory", baseDir);
@@ -318,27 +327,31 @@ public class ProjectGenerator {
             String artifactId = request.getArtifactId();
             String version = request.getVersion();
             String packageName = request.getPackageName();
+            File settingsFile = new File(mavenHome, "conf/settings.xml");
+            if (!settingsFile.exists()) {
+                return false;
+            }
             String[] generates = {"archetype:generate", "-B", "-f", pomFile.getAbsolutePath(),
                 "-DarchetypeGroupId=" + archetypeGroupId, "-DarchetypeArtifactId=" + archetypeArtifactId,
                 "-DarchetypeVersion=" + archetypeVersion, "-DgroupId=" + groupId, "-DartifactId=" + artifactId,
-                "-Dversion=" + version, "-Dpackage=" + packageName, "-Dbasedir=" + baseDir, "-U", "-e"};
+                "-Dversion=" + version, "-Dpackage=" + packageName, "-Dbasedir=" + baseDir, "-f",
+                settingsFile.getCanonicalPath(), "-U", "-e"};
             BootstrapMainStarter bootstrapMainStarter = new BootstrapMainStarter();
             bootstrapMainStarter.start(generates, mavenHome);
 
             File targetDir = new File(dir, artifactId);
             cleanUselessFile(targetDir);
-            FileSystemUtils.copyRecursively(targetDir,rootdir);
-            FileSystemUtils.deleteRecursively(dir);
+            FileSystemUtils.copyRecursively(targetDir, rootdir);
+            return true;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Generate project Error!", e);
+            return false;
         }
-
     }
 
     /**
      * clean useless file
-     * @param targetDir
      */
     private void cleanUselessFile(File targetDir) {
         File gitignoreFile = new File(targetDir, ".gitignore");
